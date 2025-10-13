@@ -7,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         body { 
             font-family: 'Poppins', sans-serif;
@@ -52,11 +52,10 @@
                 <table class="min-w-full bg-transparent">
                     <thead class="border-b-2 border-gray-300">
                         <tr>
-                            <th class="p-3 text-sm font-semibold tracking-wider text-left w-16">Rank</th>
-                            <th class="p-3 text-sm font-semibold tracking-wider text-left">Contestant</th>
-                            <th class="p-3 text-sm font-semibold tracking-wider text-left">Best Time</th>
-                            <th class="p-3 text-sm font-semibold tracking-wider text-left">Best Score</th>
-                            <th class="p-3 text-sm font-semibold tracking-wider text-center">Actions</th>
+                            <th class="p-4 text-base font-semibold tracking-wider text-left w-20">Rank</th>
+                            <th class="p-4 text-base font-semibold tracking-wider text-left">Contestant</th>
+                            <th class="p-4 text-base font-semibold tracking-wider text-left">Best Time</th>
+                            <th class="p-4 text-base font-semibold tracking-wider text-left">Best Score</th>
                         </tr>
                     </thead>
                     <tbody id="leaderboard-body">
@@ -174,14 +173,14 @@
                 leaderboardBody.innerHTML = ''; // Clear table
 
                 if (leaderboardData.length === 0) {
-                    leaderboardBody.innerHTML = `<tr><td colspan="5" class="text-center p-6 text-gray-500">No contestants yet. Add one to get started!</td></tr>`;
+                    leaderboardBody.innerHTML = `<tr><td colspan="4" class="text-center p-6 text-gray-500 text-lg">No contestants yet. Add one to get started!</td></tr>`;
                     return;
                 }
 
                 leaderboardData.forEach((player, index) => {
                     // Main Row
                     const row = document.createElement('tr');
-                    row.className = 'border-b border-gray-200 cursor-pointer hover:bg-gray-100';
+                    row.className = 'border-b border-gray-200 cursor-pointer hover:bg-gray-100 transition-colors duration-200';
                     row.dataset.contestantId = player.id;
 
                     let rankDisplay;
@@ -189,40 +188,47 @@
                         case 0: rankDisplay = '&#129351;'; break; // 1st
                         case 1: rankDisplay = '&#129352;'; break; // 2nd
                         case 2: rankDisplay = '&#129353;'; break; // 3rd
-                        default: rankDisplay = index + 1;
+                        default: rankDisplay = `<span class="font-bold text-gray-500">${index + 1}</span>`;
                     }
                     
                     row.innerHTML = `
-                        <td class="p-3 text-lg font-bold text-center w-16">${rankDisplay}</td>
-                        <td class="p-3 text-gray-700 font-semibold">${player.name}</td>
-                        <td class="p-3 text-gray-700">${player.bestRun.time}</td>
-                        <td class="p-3 text-gray-900 font-bold text-lg">${player.bestRun.score}</td>
-                        <td class="p-3 text-center">
-                            <button class="add-run-btn bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-1 px-3 rounded" data-id="${player.id}" data-name="${player.name}">Add Run</button>
-                            <button class="delete-contestant-btn bg-brand-red hover:bg-brand-red-dark text-white text-xs font-bold py-1 px-3 rounded ml-2" data-id="${player.id}">Delete</button>
-                        </td>
+                        <td class="p-4 text-3xl font-bold text-center w-20">${rankDisplay}</td>
+                        <td class="p-4 text-xl text-gray-800 font-semibold">${player.name}</td>
+                        <td class="p-4 text-xl text-gray-600">${player.bestRun.time}</td>
+                        <td class="p-4 text-2xl brand-blue font-extrabold">${player.bestRun.score}</td>
                     `;
                     leaderboardBody.appendChild(row);
 
                     // Details Row (hidden by default)
                     const detailsRow = document.createElement('tr');
-                    detailsRow.className = 'details-row bg-gray-50';
+                    detailsRow.className = 'details-row';
                     detailsRow.dataset.detailsFor = player.id;
                     
                     const detailsCell = document.createElement('td');
-                    detailsCell.colSpan = 5;
-                    detailsCell.className = 'p-4';
+                    detailsCell.colSpan = 4;
+                    detailsCell.className = 'p-5 bg-gray-50';
 
+                    let runsHtml = '';
                     if (player.runs && player.runs.length > 0) {
-                        let runsHtml = '<h4 class="font-bold mb-2 text-gray-600">All Runs:</h4><ul class="list-disc pl-5 space-y-1">';
+                        runsHtml = '<h4 class="font-bold mb-2 text-gray-600">All Runs:</h4><ul class="list-disc pl-5 space-y-2">';
                         player.runs.forEach(run => {
-                           runsHtml += `<li class="text-sm text-gray-700">Time: ${run.time}, Score: ${run.score} <button class="delete-run-btn text-red-500 hover:text-red-700 ml-2 text-xs" data-contestant-id="${player.id}" data-run-id="${run.id}">[remove]</button></li>`;
+                           runsHtml += `<li class="text-sm text-gray-700 flex justify-between items-center"><span>Time: ${run.time}, Score: <span class="font-bold">${run.score}</span></span> <button class="delete-run-btn text-red-500 hover:text-red-700 font-semibold text-xs py-1 px-2 rounded hover:bg-red-100" data-contestant-id="${player.id}" data-run-id="${run.id}">REMOVE</button></li>`;
                         });
                         runsHtml += '</ul>';
-                        detailsCell.innerHTML = runsHtml;
                     } else {
-                        detailsCell.innerHTML = '<p class="text-sm text-gray-500 italic">No runs recorded for this contestant yet.</p>';
+                        runsHtml = '<p class="text-sm text-gray-500 italic text-center py-2">No runs recorded for this contestant yet.</p>';
                     }
+
+                    detailsCell.innerHTML = `
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>${runsHtml}</div>
+                            <div class="flex flex-col items-center justify-center space-y-3 p-4 bg-gray-100 rounded-lg">
+                                 <h4 class="font-bold text-gray-700">Manage Contestant</h4>
+                                <button class="add-run-btn bg-green-500 hover:bg-green-600 text-white text-sm font-bold py-2 px-4 rounded-lg w-full" data-id="${player.id}" data-name="${player.name}">Add New Run</button>
+                                <button class="delete-contestant-btn bg-brand-red hover:bg-brand-red-dark text-white text-sm font-bold py-2 px-4 rounded-lg w-full" data-id="${player.id}">Delete Contestant</button>
+                            </div>
+                        </div>
+                    `;
                     detailsRow.appendChild(detailsCell);
                     leaderboardBody.appendChild(detailsRow);
                 });
@@ -274,44 +280,47 @@
 
             leaderboardBody.addEventListener('click', (e) => {
                 const target = e.target;
-                
-                // Add Run Button
-                if (target.classList.contains('add-run-btn')) {
-                    e.stopPropagation();
-                    const contestantId = parseInt(target.dataset.id, 10);
-                    const contestantName = target.dataset.name;
-                    runForm.reset();
-                    runContestantIdInput.value = contestantId;
-                    runModalContestantName.textContent = `For ${contestantName}`;
-                    openModal(runModal);
-                    return;
-                }
+                const button = target.closest('button');
 
-                // Delete Contestant Button
-                if (target.classList.contains('delete-contestant-btn')) {
-                    e.stopPropagation();
-                    itemToDelete = { type: 'contestant', id: parseInt(target.dataset.id, 10) };
-                    deleteModalText.textContent = "Do you really want to delete this contestant and all their runs? This action cannot be undone.";
-                    openModal(deleteModal);
-                    return;
-                }
-                
-                // Delete Run Button
-                if (target.classList.contains('delete-run-btn')) {
-                    e.stopPropagation();
-                    itemToDelete = { 
-                        type: 'run', 
-                        contestantId: parseInt(target.dataset.contestantId, 10),
-                        runId: parseInt(target.dataset.runId, 10)
-                    };
-                    deleteModalText.textContent = "Do you really want to delete this run? This action cannot be undone.";
-                    openModal(deleteModal);
-                    return;
+                if (button) {
+                    // Add Run Button
+                    if (button.classList.contains('add-run-btn')) {
+                        e.stopPropagation();
+                        const contestantId = parseInt(button.dataset.id, 10);
+                        const contestantName = button.dataset.name;
+                        runForm.reset();
+                        runContestantIdInput.value = contestantId;
+                        runModalContestantName.textContent = `For ${contestantName}`;
+                        openModal(runModal);
+                        return;
+                    }
+
+                    // Delete Contestant Button
+                    if (button.classList.contains('delete-contestant-btn')) {
+                        e.stopPropagation();
+                        itemToDelete = { type: 'contestant', id: parseInt(button.dataset.id, 10) };
+                        deleteModalText.textContent = "Do you really want to delete this contestant and all their runs? This action cannot be undone.";
+                        openModal(deleteModal);
+                        return;
+                    }
+                    
+                    // Delete Run Button
+                    if (button.classList.contains('delete-run-btn')) {
+                        e.stopPropagation();
+                        itemToDelete = { 
+                            type: 'run', 
+                            contestantId: parseInt(button.dataset.contestantId, 10),
+                            runId: parseInt(button.dataset.runId, 10)
+                        };
+                        deleteModalText.textContent = "Do you really want to delete this run? This action cannot be undone.";
+                        openModal(deleteModal);
+                        return;
+                    }
                 }
                 
                 // Toggle details row
-                const row = target.closest('tr');
-                if (row && row.dataset.contestantId) {
+                const row = target.closest('tr[data-contestant-id]');
+                if (row) {
                     const detailsRow = leaderboardBody.querySelector(`[data-details-for="${row.dataset.contestantId}"]`);
                     if (detailsRow) {
                         detailsRow.classList.toggle('expanded');
