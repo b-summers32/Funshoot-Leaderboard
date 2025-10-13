@@ -22,20 +22,12 @@
                 <p class="text-gray-500 mt-2">Scores are updated automatically from your published Google Sheet.</p>
             </header>
             
-            <!-- Instructions Section -->
+            <!-- Instructions Section (will be hidden on success) -->
             <div id="instructions" class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-lg mb-6">
-                <h3 class="font-bold text-blue-800">Action Required: Publish Your Sheet</h3>
+                <h3 class="font-bold text-blue-800">Setup Complete</h3>
                 <p class="text-blue-700 text-sm mt-1">
-                    This leaderboard now works by fetching a published version of your sheet. Please follow these steps in Google Sheets:
+                    Your sheet is published and the leaderboard is connected. Ensure "Automatically republish when changes are made" is checked in Google Sheets to keep scores live.
                 </p>
-                <ol class="list-decimal list-inside text-sm text-blue-800 mt-2 space-y-1">
-                    <li>Go to <strong>File > Share > Publish to web</strong>.</li>
-                    <li>In the 'Link' tab, select the <strong>"score Input"</strong> sheet.</li>
-                    <li>Change the format to <strong>"Comma-separated values (.csv)"</strong>.</li>
-                    <li>Under 'Published content & settings', ensure <strong>"Automatically republish when changes are made"</strong> is checked.</li>
-                    <li>Click the <strong>Publish</strong> button.</li>
-                </ol>
-                <p class="text-blue-700 text-sm mt-3">Once published, this page will automatically display the scores.</p>
             </div>
 
             <!-- Loading Indicator -->
@@ -47,7 +39,7 @@
             <!-- Error Message -->
             <div id="error" class="text-center py-8 bg-red-50 text-red-700 rounded-lg hidden">
                 <h3 class="font-bold">Could Not Fetch Data</h3>
-                <p class="text-sm mt-1">Please ensure you have published the "score Input" sheet as a CSV file.</p>
+                <p class="text-sm mt-1">Please ensure your sheet is still published to the web as a CSV file.</p>
             </div>
 
             <!-- Leaderboard Table -->
@@ -76,15 +68,11 @@
         const instructionsContainer = document.getElementById('instructions');
         
         // --- CONFIGURATION ---
-        // We no longer need an API key. We just need the Sheet ID and the sheet name.
-        const spreadsheetId = '1VqKRVHggxP75odndTpmLujdB_3JA24pHLc6b1cqk5pU';
-        const sheetName = 'score Input';
+        // Using the direct "publish to web" CSV link you provided.
+        const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR15Wcfhcq1SW8r0EIXlbgsWLXp9ZLlad25KS06sA6Lv5RhIeymVZguvo_TPF_8cVxFUfpsZx2u83S0/pub?gid=1830636602&single=true&output=csv';
         // -------------------
 
         async function fetchLeaderboardData() {
-            // This URL fetches the published CSV version of your sheet.
-            const sheetUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
-
             try {
                 const response = await fetch(sheetUrl);
                 if (!response.ok) {
@@ -94,7 +82,7 @@
                 
                 // Parse the CSV data
                 const rows = csvData.trim().split('\n');
-                // Remove the header row
+                // The published CSV includes a header row, so we slice it off.
                 const dataRows = rows.slice(1);
 
                 const processedScores = dataRows
