@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Funshoot Leaderboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <div class="bg-white rounded-2xl shadow-lg p-6 md:p-8 max-w-4xl mx-auto">
+            
+            <header class="text-center mb-6">
+                <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Funshoot Leaderboard</h1>
+                <p class="text-gray-500 mt-2">Scores are updated automatically from your published Google Sheet.</p>
+            </header>
+            
+            <!-- Instructions Section -->
+            <div id="instructions" class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-lg mb-6">
+                <h3 class="font-bold text-blue-800">Action Required: Publish Your Sheet</h3>
+                <p class="text-blue-700 text-sm mt-1">
+                    This leaderboard now works by fetching a published version of your sheet. Please follow these steps in Google Sheets:
+                </p>
+                <ol class="list-decimal list-inside text-sm text-blue-800 mt-2 space-y-1">
+                    <li>Go to <strong>File > Share > Publish to web</strong>.</li>
+                    <li>In the 'Link' tab, select the <strong>"score Input"</strong> sheet.</li>
+                    <li>Change the format to <strong>"Comma-separated values (.csv)"</strong>.</li>
+                    <li>Under 'Published content & settings', ensure <strong>"Automatically republish when changes are made"</strong> is checked.</li>
+                    <li>Click the <strong>Publish</strong> button.</li>
+                </ol>
+                <p class="text-blue-700 text-sm mt-3">Once published, this page will automatically display the scores.</p>
+            </div>
+
+            <!-- Loading Indicator -->
+            <div id="loading" class="text-center py-8">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+                <p class="mt-4 text-gray-600">Fetching latest scores...</p>
+            </div>
+            
+            <!-- Error Message -->
+            <div id="error" class="text-center py-8 bg-red-50 text-red-700 rounded-lg hidden">
+                <h3 class="font-bold">Could Not Fetch Data</h3>
+                <p class="text-sm mt-1">Please ensure you have published the "score Input" sheet as a CSV file.</p>
+            </div>
+
+            <!-- Leaderboard Table -->
+            <div id="leaderboard-container" class="overflow-x-auto hidden">
+                <table class="min-w-full bg-white rounded-lg">
+                    <thead class="bg-gray-200">
+                        <tr>
+                            <th class="p-3 text-sm font-semibold tracking-wide text-left rounded-tl-lg">Rank</th>
+                            <th class="p-3 text-sm font-semibold tracking-wide text-left">Contestant</th>
+                            <th class="p-3 text-sm font-semibold tracking-wide text-left rounded-tr-lg">Score</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboard-body" class="divide-y divide-gray-200">
+                        <!-- Dynamic content will be inserted here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const leaderboardBody = document.getElementById('leaderboard-body');
+        const loadingIndicator = document.getElementById('loading');
+        const errorIndicator = document.getElementById('error');
+        const leaderboardContainer = document.getElementById('leaderboard-container');
+        const instructionsContainer = document.getElementById('instructions');
+        
+        // --- CONFIGURATION ---
+        // We no longer need an API key. We just need the Sheet ID and the sheet name.
+        const spreadsheetId = '1VqKRVHggxP75odndTpmLujdB_3JA24pHLc6b1cqk5pU';
+        const sheetName = 'score Input';
+        // -------------------
+
+        async function fetchLeaderboardData() {
+            // This URL fetches the published CSV version of your sheet.
+            const sheetUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
+
+            try {
+                const response = await fetch(sheetUrl);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const csvData = await response.text();
+                
+                // Parse the CSV data
+                const rows = csvData.trim().split('\n');
+                // Remove the header row
+                const dataRows = rows.slice(1);
+
+                const processedScores = dataRows
+                    .map(row => {
+                        // CSV values might be enclosed in quotes, so we clean them up.
+                        const columns = row.split(',').map(col => col.trim().replace(/"/g, ''));
+                        return {
+                            name: columns[0],
+                            score: parseInt(columns[1], 10) || 0
+                        };
+                    })
+                    .filter(player => player.name && player.name.trim() !== '')
+                    .sort((a, b) => b.score - a.score);
+
+                renderLeaderboard(processedScores);
+                
+                // If we successfully fetch data, hide the initial instructions.
+                instructionsContainer.classList.add('hidden');
+
+            } catch (error) {
+                console.error('Error fetching leaderboard data:', error);
+                loadingIndicator.classList.add('hidden');
+                errorIndicator.classList.remove('hidden');
+            } finally {
+                loadingIndicator.classList.add('hidden');
+            }
+        }
+
+        function renderLeaderboard(data) {
+            leaderboardBody.innerHTML = '';
+
+            if (data.length === 0) {
+                 leaderboardBody.innerHTML = `<tr><td colspan="3" class="text-center p-4 text-gray-500">No scores recorded yet.</td></tr>`;
+            } else {
+                data.forEach((player, index) => {
+                    const row = document.createElement('tr');
+                    
+                    if (index % 2 !== 0) {
+                        row.classList.add('bg-gray-50');
+                    }
+                    
+                    let rankDisplay;
+                    switch(index) {
+                        case 0: rankDisplay = '&#129351;'; break; // 1st place
+                        case 1: rankDisplay = '&#129352;'; break; // 2nd place
+                        case 2: rankDisplay = '&#129353;'; break; // 3rd place
+                        default: rankDisplay = index + 1;
+                    }
+
+                    row.innerHTML = `
+                        <td class="p-3 text-lg font-bold text-center w-16">${rankDisplay}</td>
+                        <td class="p-3 text-gray-700 font-medium">${player.name}</td>
+                        <td class="p-3 text-gray-900 font-bold">${player.score}</td>
+                    `;
+                    leaderboardBody.appendChild(row);
+                });
+            }
+            
+            leaderboardContainer.classList.remove('hidden');
+        }
+        
+        // --- SCRIPT START ---
+        fetchLeaderboardData();
+        setInterval(fetchLeaderboardData, 30000); // Refresh every 30 seconds
+        // --------------------
+
+    </script>
+
+</body>
+</html>
+
