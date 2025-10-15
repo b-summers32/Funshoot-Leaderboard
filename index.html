@@ -11,14 +11,14 @@
     <style>
         body { 
             font-family: 'Poppins', sans-serif;
-            background-image: url('./Target Pattern Blue.png');
-            background-size: cover;
-            background-position: center;
+            /* Replaced broken local image with a self-contained SVG pattern */
+            background-color: #e0f2fe;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23003A70' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
             background-attachment: fixed;
         }
         .main-container {
-            background-color: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
+            background-color: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(12px);
         }
         .modal-backdrop {
             background-color: rgba(0, 0, 0, 0.6);
@@ -54,7 +54,6 @@
                         <tr>
                             <th class="p-4 text-base font-semibold tracking-wider text-left w-20">Rank</th>
                             <th class="p-4 text-base font-semibold tracking-wider text-left">Contestant</th>
-                            <th class="p-4 text-base font-semibold tracking-wider text-left">Best Time</th>
                             <th class="p-4 text-base font-semibold tracking-wider text-left">Best Score</th>
                         </tr>
                     </thead>
@@ -91,10 +90,6 @@
             <p id="run-modal-contestant-name" class="mb-6 text-gray-600"></p>
             <form id="run-form">
                 <input type="hidden" id="run-contestant-id">
-                <div class="mb-4">
-                    <label for="run-time" class="block text-gray-700 text-sm font-bold mb-2">Time</label>
-                    <input type="text" id="run-time" placeholder="e.g., 01:23.45" class="shadow-sm border rounded-lg w-full py-3 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                </div>
                 <div class="mb-6">
                     <label for="run-score" class="block text-gray-700 text-sm font-bold mb-2">Score</label>
                     <input type="number" id="run-score" placeholder="e.g., 100" class="shadow-sm border rounded-lg w-full py-3 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500" required>
@@ -144,21 +139,25 @@
             let nextId = 1;
             let itemToDelete = null; // Can be {type: 'contestant', id} or {type: 'run', contestantId, runId}
 
+            // Using a new storage key to avoid conflicts with old data structure
+            const STORAGE_KEY = 'funshootLeaderboard_v3';
+            const NEXT_ID_KEY = 'funshootNextId_v3';
+
             // --- DATA HELPERS ---
             function loadData() {
-                contestants = JSON.parse(localStorage.getItem('funshootLeaderboard_v2')) || [];
-                nextId = parseInt(localStorage.getItem('funshootNextId_v2'), 10) || 1;
+                contestants = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+                nextId = parseInt(localStorage.getItem(NEXT_ID_KEY), 10) || 1;
                 renderLeaderboard();
             }
 
             function saveData() {
-                localStorage.setItem('funshootLeaderboard_v2', JSON.stringify(contestants));
-                localStorage.setItem('funshootNextId_v2', nextId.toString());
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(contestants));
+                localStorage.setItem(NEXT_ID_KEY, nextId.toString());
             }
 
             function getBestRun(runs) {
                 if (!runs || runs.length === 0) {
-                    return { time: 'N/A', score: 0 };
+                    return { score: 'N/A' };
                 }
                 return runs.reduce((best, current) => (current.score > best.score ? current : best), runs[0]);
             }
@@ -168,12 +167,16 @@
                 const leaderboardData = contestants.map(c => ({
                     ...c,
                     bestRun: getBestRun(c.runs),
-                })).sort((a, b) => b.bestRun.score - a.bestRun.score);
+                })).sort((a, b) => {
+                    if (a.bestRun.score === 'N/A') return 1;
+                    if (b.bestRun.score === 'N/A') return -1;
+                    return b.bestRun.score - a.bestRun.score
+                });
 
                 leaderboardBody.innerHTML = ''; // Clear table
 
                 if (leaderboardData.length === 0) {
-                    leaderboardBody.innerHTML = `<tr><td colspan="4" class="text-center p-6 text-gray-500 text-lg">No contestants yet. Add one to get started!</td></tr>`;
+                    leaderboardBody.innerHTML = `<tr><td colspan="3" class="text-center p-6 text-gray-500 text-lg">No contestants yet. Add one to get started!</td></tr>`;
                     return;
                 }
 
@@ -194,7 +197,6 @@
                     row.innerHTML = `
                         <td class="p-4 text-3xl font-bold text-center w-20">${rankDisplay}</td>
                         <td class="p-4 text-xl text-gray-800 font-semibold">${player.name}</td>
-                        <td class="p-4 text-xl text-gray-600">${player.bestRun.time}</td>
                         <td class="p-4 text-2xl brand-blue font-extrabold">${player.bestRun.score}</td>
                     `;
                     leaderboardBody.appendChild(row);
@@ -205,14 +207,17 @@
                     detailsRow.dataset.detailsFor = player.id;
                     
                     const detailsCell = document.createElement('td');
-                    detailsCell.colSpan = 4;
+                    detailsCell.colSpan = 3; // Adjusted colspan
                     detailsCell.className = 'p-5 bg-gray-50';
 
                     let runsHtml = '';
                     if (player.runs && player.runs.length > 0) {
+                        // Sort runs by score descending for display
+                        const sortedRuns = [...player.runs].sort((a,b) => b.score - a.score);
+
                         runsHtml = '<h4 class="font-bold mb-2 text-gray-600">All Runs:</h4><ul class="list-disc pl-5 space-y-2">';
-                        player.runs.forEach(run => {
-                           runsHtml += `<li class="text-sm text-gray-700 flex justify-between items-center"><span>Time: ${run.time}, Score: <span class="font-bold">${run.score}</span></span> <button class="delete-run-btn text-red-500 hover:text-red-700 font-semibold text-xs py-1 px-2 rounded hover:bg-red-100" data-contestant-id="${player.id}" data-run-id="${run.id}">REMOVE</button></li>`;
+                        sortedRuns.forEach(run => {
+                           runsHtml += `<li class="text-sm text-gray-700 flex justify-between items-center"><span>Score: <span class="font-bold">${run.score}</span></span> <button class="delete-run-btn text-red-500 hover:text-red-700 font-semibold text-xs py-1 px-2 rounded hover:bg-red-100" data-contestant-id="${player.id}" data-run-id="${run.id}">REMOVE</button></li>`;
                         });
                         runsHtml += '</ul>';
                     } else {
@@ -265,13 +270,12 @@
             runForm.addEventListener('submit', (e) => {
                 e.preventDefault();
                 const contestantId = parseInt(runContestantIdInput.value, 10);
-                const time = document.getElementById('run-time').value;
                 const score = parseInt(document.getElementById('run-score').value, 10);
 
                 const contestant = contestants.find(c => c.id === contestantId);
-                if (contestant && time && !isNaN(score)) {
+                if (contestant && !isNaN(score)) {
                     const runId = contestant.runs.length > 0 ? Math.max(...contestant.runs.map(r => r.id)) + 1 : 1;
-                    contestant.runs.push({ id: runId, time, score });
+                    contestant.runs.push({ id: runId, score });
                     saveData();
                     renderLeaderboard();
                     closeModal(runModal);
@@ -283,9 +287,11 @@
                 const button = target.closest('button');
 
                 if (button) {
+                    // Stop propagation to prevent row click from firing
+                    e.stopPropagation();
+
                     // Add Run Button
                     if (button.classList.contains('add-run-btn')) {
-                        e.stopPropagation();
                         const contestantId = parseInt(button.dataset.id, 10);
                         const contestantName = button.dataset.name;
                         runForm.reset();
@@ -297,7 +303,6 @@
 
                     // Delete Contestant Button
                     if (button.classList.contains('delete-contestant-btn')) {
-                        e.stopPropagation();
                         itemToDelete = { type: 'contestant', id: parseInt(button.dataset.id, 10) };
                         deleteModalText.textContent = "Do you really want to delete this contestant and all their runs? This action cannot be undone.";
                         openModal(deleteModal);
@@ -306,7 +311,6 @@
                     
                     // Delete Run Button
                     if (button.classList.contains('delete-run-btn')) {
-                        e.stopPropagation();
                         itemToDelete = { 
                             type: 'run', 
                             contestantId: parseInt(button.dataset.contestantId, 10),
@@ -321,7 +325,17 @@
                 // Toggle details row
                 const row = target.closest('tr[data-contestant-id]');
                 if (row) {
+                    const allDetails = leaderboardBody.querySelectorAll('.details-row.expanded');
                     const detailsRow = leaderboardBody.querySelector(`[data-details-for="${row.dataset.contestantId}"]`);
+                    
+                    // Close any other open details rows
+                    allDetails.forEach(d => {
+                        if (d !== detailsRow) {
+                            d.classList.remove('expanded');
+                        }
+                    });
+
+                    // Toggle the clicked one
                     if (detailsRow) {
                         detailsRow.classList.toggle('expanded');
                     }
@@ -354,4 +368,3 @@
     </script>
 </body>
 </html>
-
