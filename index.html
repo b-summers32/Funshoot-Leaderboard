@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Funshoot Leaderboard</title>
+    <!-- Added Trophy Favicon -->
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='gold' stroke='%23B5343B' stroke-width='1'%3E%3Cpath d='M6 9H4.5a2.5 2.5 0 0 1 0-5H6m12 0h-1.5a2.5 2.5 0 0 0 0 5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.87 18.75 7 20.24 7 22m7-7.34V17c0 .55.47.98.97 1.21C16.13 18.75 17 20.24 17 22M18 2H6v7c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V2Z'/%3E%3C/svg%3E">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,9 +13,11 @@
     <style>
         body { 
             font-family: 'Poppins', sans-serif;
-            /* Replaced broken local image with a self-contained SVG pattern */
-            background-color: #e0f2fe;
-            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23003A70' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            /* Restored original background image path. 
+               Note: For this to work, 'Target Pattern Blue.png' must be in the same folder as this HTML file. */
+            background-image: url('./Target Pattern Blue.png');
+            background-size: cover;
+            background-position: center;
             background-attachment: fixed;
         }
         .main-container {
@@ -368,3 +372,4 @@
     </script>
 </body>
 </html>
+
